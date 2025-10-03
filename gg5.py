@@ -371,7 +371,11 @@ def aba_pedidos():
             use_container_width=True,
             num_rows="fixed",
             column_config={
-                "Cliente": st.column_config.TextColumn("Cliente"),
+                "Cliente": st.column_config.SelectboxColumn(
+                    "Cliente",
+                    options=nomes_clientes,
+                    help="Selecione o cliente (ou digite para filtrar)"
+                ),
                 "Quantidade de Cartelas": st.column_config.NumberColumn("Quantidade de Cartelas", min_value=0, step=1),
                 "Valor Base": st.column_config.NumberColumn("Valor Base", format="%.2f", min_value=0.0, step=0.5),
                 "Forma de Pagamento": st.column_config.SelectboxColumn("Forma de Pagamento", options=["Dinheiro","Cartão","Pix"]),
