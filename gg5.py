@@ -389,22 +389,16 @@ def aba_pedidos():
             if st.button("💾 Salvar alterações"):
                 # Atualizar valor total com base em Qtd * Valor Base
                 editados["Valor Total"] = editados["Quantidade de Cartelas"] * editados["Valor Base"]
-                # Converter Pago para Sim/Não
+                # Converter "Pago" para Sim/Não
                 editados["Pago"] = editados["Pago"].apply(lambda x: "Sim" if x else "Não")
-                # Remover coluna "Remover" antes de salvar
-                final_df = editados.drop(columns=["Remover"])
-                if SHEETS_MANAGER.overwrite("pedidos", final_df):
-                    st.success("Alterações salvas com sucesso!")
 
-        with col2:
-            if st.button("🗑️ Remover selecionados"):
-                removidos = editados[editados["Remover"] == True]
-                if not removidos.empty:
-                    final_df = editados[editados["Remover"] == False].drop(columns=["Remover"])
-                    if SHEETS_MANAGER.overwrite("pedidos", final_df):
-                        st.success(f"{len(removidos)} registro(s) removido(s)!")
-                else:
-                    st.info("Nenhum pedido marcado para remoção.")
+                # Remover linhas marcadas
+                if "Remover" in editados.columns:
+                    editados = editados[~editados["Remover"]].drop(columns=["Remover"], errors="ignore")
+
+                if SHEETS_MANAGER.overwrite("pedidos", editados):
+                    st.success("Alterações salvas com sucesso!")
+                    st.rerun()
     else:
         st.info("Nenhum pedido registrado ainda.")
 
