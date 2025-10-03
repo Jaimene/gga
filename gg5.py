@@ -102,7 +102,7 @@ def aba_producao():
         }
         if SHEETS_MANAGER.append_row("producao", novo):
             st.success("✅ Registro salvo!")
-            st.experimental_rerun()
+            st.rerun()
 
     st.subheader("📋 Histórico de Produção")
     st.dataframe(df, use_container_width=True)
@@ -128,7 +128,7 @@ def aba_custos():
         }
         if SHEETS_MANAGER.append_row("custos", novo):
             st.success("✅ Custo registrado!")
-            st.experimental_rerun()
+            st.rerun()
 
     st.subheader("📋 Histórico de Custos")
     st.dataframe(df, use_container_width=True)
@@ -153,7 +153,7 @@ def aba_clientes():
             }
             if SHEETS_MANAGER.append_row("clientes", novo):
                 st.success("Cliente adicionado!")
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.warning("Preencha nome e endereço.")
 
