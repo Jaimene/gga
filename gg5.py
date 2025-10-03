@@ -353,7 +353,57 @@ def aba_pedidos():
 
     st.subheader("📋 Lista de Pedidos")
     df = SHEETS_MANAGER.get_dataframe("pedidos", columns=columns)
-    st.dataframe(df, use_container_width=True)
+
+    if not df.empty:
+        # Converter tipos
+        df["Quantidade de Cartelas"] = pd.to_numeric(df["Quantidade de Cartelas"], errors="coerce").fillna(0).astype(int)
+        df["Valor Base"] = pd.to_numeric(df["Valor Base"], errors="coerce").fillna(0.0)
+        df["Valor Total"] = pd.to_numeric(df["Valor Total"], errors="coerce").fillna(0.0)
+
+        # Normalizar campo Pago para booleano
+        df["Pago"] = df["Pago"].apply(lambda x: True if str(x).strip().lower() in ["sim","true","1"] else False)
+
+        # Adicionar coluna de remoção (inicialmente False)
+        df["Remover"] = False
+
+        editados = st.data_editor(
+            df,
+            use_container_width=True,
+            num_rows="fixed",
+            column_config={
+                "Cliente": st.column_config.TextColumn("Cliente"),
+                "Quantidade de Cartelas": st.column_config.NumberColumn("Quantidade de Cartelas", min_value=0, step=1),
+                "Valor Base": st.column_config.NumberColumn("Valor Base", format="%.2f", min_value=0.0, step=0.5),
+                "Forma de Pagamento": st.column_config.SelectboxColumn("Forma de Pagamento", options=["Dinheiro","Cartão","Pix"]),
+                "Pago": st.column_config.CheckboxColumn("Pago"),
+                "Remover": st.column_config.CheckboxColumn("Remover")
+            }
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("💾 Salvar alterações"):
+                # Atualizar valor total com base em Qtd * Valor Base
+                editados["Valor Total"] = editados["Quantidade de Cartelas"] * editados["Valor Base"]
+                # Converter Pago para Sim/Não
+                editados["Pago"] = editados["Pago"].apply(lambda x: "Sim" if x else "Não")
+                # Remover coluna "Remover" antes de salvar
+                final_df = editados.drop(columns=["Remover"])
+                if SHEETS_MANAGER.overwrite("pedidos", final_df):
+                    st.success("Alterações salvas com sucesso!")
+
+        with col2:
+            if st.button("🗑️ Remover selecionados"):
+                removidos = editados[editados["Remover"] == True]
+                if not removidos.empty:
+                    final_df = editados[editados["Remover"] == False].drop(columns=["Remover"])
+                    if SHEETS_MANAGER.overwrite("pedidos", final_df):
+                        st.success(f"{len(removidos)} registro(s) removido(s)!")
+                else:
+                    st.info("Nenhum pedido marcado para remoção.")
+    else:
+        st.info("Nenhum pedido registrado ainda.")
+
 
     if not df.empty:
         # Converter colunas numéricas
