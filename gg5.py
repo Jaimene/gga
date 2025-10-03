@@ -327,7 +327,7 @@ def aba_pedidos():
     if df_clientes.empty:
         st.info("Cadastre clientes antes de registrar pedidos.")
         return
-    nomes_clientes = df_clientes["nome"].tolist()
+    nomes_clientes = df_clientes["Nome"].tolist()
 
     with st.form("form_pedidos"):
         cliente = st.selectbox("Cliente", nomes_clientes)
@@ -396,3 +396,4 @@ elif menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+
