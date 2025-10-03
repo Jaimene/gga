@@ -161,8 +161,8 @@ def aba_clientes():
     df = SHEETS_MANAGER.get_dataframe("clientes", columns=columns)
     if not df.empty:
         for _, row in df.iterrows():
-            obs_txt = f" — Obs.: {row.get('observacoes','')}" if row.get("observacoes") else ""
-            st.write(f"**{row.get('nome','')}** — {row.get('endereco','')}{obs_txt}")
+            obs_txt = f" — Obs.: {row.get('Obs','')}" if row.get("Obs") else ""
+            st.write(f"**{row.get('Nome','')}** — {row.get('Endereço','')}{obs_txt}")
     else:
         st.info("Nenhum cliente cadastrado.")
 
@@ -396,4 +396,3 @@ elif menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
-
