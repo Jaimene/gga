@@ -237,7 +237,7 @@ def geocodificar_endereco(endereco, nome):
 
 def aba_rota():
     st.header("🚚 Geração de Rota de Entrega")
-    df_clientes = SHEETS_MANAGER.get_dataframe("clientes", columns=["nome","endereco","observacoes"])
+    df_clientes = SHEETS_MANAGER.get_dataframe("clientes", columns=["Nome","Endereço","Obs"])
     if df_clientes.empty:
         st.info("Cadastre clientes antes de gerar a rota.")
         return
@@ -323,7 +323,7 @@ def _mostrar_rota_persistente():
 def aba_pedidos():
     st.header("🧾 Pedidos")
     columns = ["Cliente","Quantidade de Cartelas","Valor Base","Valor Total","Forma de Pagamento","Pago"]
-    df_clientes = SHEETS_MANAGER.get_dataframe("clientes", columns=["nome","endereco","observacoes"])
+    df_clientes = SHEETS_MANAGER.get_dataframe("clientes", columns=["Nome","Endereço","Obs"])
     if df_clientes.empty:
         st.info("Cadastre clientes antes de registrar pedidos.")
         return
