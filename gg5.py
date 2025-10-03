@@ -331,6 +331,7 @@ def aba_pedidos():
 
     with st.form("form_pedidos"):
         cliente = st.selectbox("Cliente", nomes_clientes)
+        data_entrega = st.date_input("Data da entrega")
         qnt_cartelas = st.number_input("Quantidade de Cartelas", min_value=1, step=1, value=1)
         valor_base = st.number_input("Valor Base da Cartela (R$)", min_value=0.0, format="%.2f", value=0.0)
         forma_pgto = st.selectbox("Forma de Pagamento", ["Dinheiro","Cartão","Pix"])
@@ -342,6 +343,7 @@ def aba_pedidos():
         novo = {
             "Data": date.today().strftime("%Y-%m-%d"),
             "Cliente": cliente,
+            "Data da Entrega": data_entrega.strftime("%d/%m/%Y"),
             "Quantidade de Cartelas": int(qnt_cartelas),
             "Valor Base": float(valor_base),
             "Valor Total": float(valor_total),
@@ -376,6 +378,7 @@ def aba_pedidos():
                     options=nomes_clientes,
                     help="Selecione o cliente (ou digite para filtrar)"
                 ),
+                "Data da entrega": st.column_config.DateColumn("Data da entrega", format="DD/MM/YYYY"),
                 "Quantidade de Cartelas": st.column_config.NumberColumn("Quantidade de Cartelas", min_value=0, step=1),
                 "Valor Base": st.column_config.NumberColumn("Valor Base", format="%.2f", min_value=0.0, step=0.5),
                 "Forma de Pagamento": st.column_config.SelectboxColumn("Forma de Pagamento", options=["Dinheiro","Cartão","Pix"]),
