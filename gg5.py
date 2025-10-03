@@ -298,20 +298,25 @@ def _mostrar_rota_persistente():
         st_folium(m, width=700, height=500)
 
         if len(coordenadas) >= 2:
-            google_maps_url = f"https://www.google.com/maps/dir/{coordenadas[0][1]},{coordenadas[0][0]}" + "".join(
-                [f"/{coord[1]},{coord[0]}" for coord in coordenadas[1:]]
+            # monta URLs com coordenadas (ordem otimizada)
+            google_maps_url = (
+                f"https://www.google.com/maps/dir/{coordenadas[0][1]},{coordenadas[0][0]}"
+                + "".join([f"/{coord[1]},{coord[0]}" for coord in coordenadas[1:]])
             )
             waze_url = f"https://waze.com/ul?ll={coordenadas[-1][1]},{coordenadas[-1][0]}&navigate=yes"
 
             st.markdown(f"**🗺️ Google Maps:** [Abrir Rota]({google_maps_url})", unsafe_allow_html=True)
             st.markdown(f"**🚗 Waze (último destino):** [Abrir Rota]({waze_url})", unsafe_allow_html=True)
 
-            # Botão copiar link (JS)
-            st.markdown(\"\"\"<input type="text" value=\"\"\" + google_maps_url + \"\"\" id="linkRota" readonly style="opacity:0; position:absolute;">
+            # Botão copiar link (JS) — usamos f-string para inserir a URL com segurança
+            st.markdown(f'''
+                <input type="text" value="{google_maps_url}" id="linkRota" readonly style="opacity:0; position:absolute;">
                 <button onclick="navigator.clipboard.writeText(document.getElementById('linkRota').value)" 
                         style="padding:8px 14px; background-color:#ffc107; border:none; border-radius:5px; cursor:pointer;">
                     📋 Copiar Link do Google Maps
-                </button>\"\"\", unsafe_allow_html=True)
+                </button>
+            ''', unsafe_allow_html=True)
+
     except Exception as e:
         st.error(f"Erro ao gerar rota: {e}")
 
