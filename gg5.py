@@ -87,7 +87,7 @@ def aba_producao():
     with st.form("form_producao"):
         data = st.date_input("Data", value=date.today())
         ovos = st.number_input("Ovos coletados", min_value=0)
-        galinhas = st.number_input("Galinhas em postura", min_value=0, max_value=200, value=200)
+        galinhas = st.number_input("Galinhas em postura", min_value=0, max_value=1000, value=200)
         vendas = st.number_input("Valor das vendas (R$)", min_value=0.0, format="%.2f")
         mortes = st.number_input("Número de galinhas mortas", min_value=0)
         submit = st.form_submit_button("Salvar produção")
@@ -340,6 +340,7 @@ def aba_pedidos():
     if submit:
         valor_total = round(qnt_cartelas * valor_base, 2)
         novo = {
+            "Data": date.today().strftime("%Y-%m-%d"),
             "Cliente": cliente,
             "Quantidade de Cartelas": int(qnt_cartelas),
             "Valor Base": float(valor_base),
@@ -353,6 +354,30 @@ def aba_pedidos():
     st.subheader("📋 Lista de Pedidos")
     df = SHEETS_MANAGER.get_dataframe("pedidos", columns=columns)
     st.dataframe(df, use_container_width=True)
+
+    if not df.empty:
+        # Converter colunas numéricas
+        df["Quantidade de Cartelas"] = pd.to_numeric(df["Quantidade de Cartelas"], errors="coerce").fillna(0)
+        df["Valor Total"] = pd.to_numeric(df["Valor Total"], errors="coerce").fillna(0)
+
+        # Adicionar coluna de mês/ano
+        # (precisamos de uma coluna de Data no futuro; como ainda não temos, vamos usar a data de hoje no momento do registro)
+        if "Data" not in df.columns:
+            # Caso não exista, cria vazia (isso evita erro)
+            df["Data"] = pd.Timestamp.today().strftime("%Y-%m-%d")
+
+        df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
+        df["Ano-Mês"] = df["Data"].dt.to_period("M")
+
+        resumo = df.groupby("Ano-Mês").agg({
+            "Quantidade de Cartelas": "sum",
+            "Valor Total": "sum"
+        }).reset_index()
+
+        resumo["Ano-Mês"] = resumo["Ano-Mês"].dt.strftime("%m/%Y")
+
+        st.subheader("📊 Resumo Mensal de Pedidos")
+        st.dataframe(resumo, use_container_width=True)
 
 def aba_visualizar_pedidos():
     st.header("📂 Visualizar Pedidos Salvos")
