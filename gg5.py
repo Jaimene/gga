@@ -330,6 +330,7 @@ def aba_pedidos():
     nomes_clientes = df_clientes["Nome"].tolist()
 
     with st.form("form_pedidos"):
+        data_pedido = st.date_input("Data do Pedido", value=date.today())
         cliente = st.selectbox("Cliente", nomes_clientes)
         qnt_cartelas = st.number_input("Quantidade de Cartelas", min_value=1, step=1, value=1)
         valor_base = st.number_input("Valor Base da Cartela (R$)", min_value=0.0, format="%.2f", value=0.0)
@@ -337,10 +338,11 @@ def aba_pedidos():
         pago = st.checkbox("✅ Pago")
         submit = st.form_submit_button("Salvar Pedido")
 
+
     if submit:
         valor_total = round(qnt_cartelas * valor_base, 2)
         novo = {
-            "Data": date.today().strftime("%Y-%m-%d"),
+            "Data": data_pedido.strftime("%d-%m-%Y"),
             "Cliente": cliente,
             "Quantidade de Cartelas": int(qnt_cartelas),
             "Valor Base": float(valor_base),
@@ -469,3 +471,4 @@ elif menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+
