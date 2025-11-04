@@ -85,7 +85,7 @@ def aba_producao():
     df = SHEETS_MANAGER.get_dataframe("producao", columns=columns)
 
     with st.form("form_producao"):
-        data = st.date_input("Data", value=date.today())
+        data = st.date_input("Data", value=date.today(), format="DD.MM.YYYY")
         ovos = st.number_input("Ovos coletados", min_value=0)
         galinhas = st.number_input("Galinhas em postura", min_value=0, max_value=1000, value=200)
         vendas = st.number_input("Valor das vendas (R$)", min_value=0.0, format="%.2f")
@@ -94,7 +94,7 @@ def aba_producao():
 
     if submit:
         novo = {
-            "Data": data.strftime("%Y-%m-%d"),
+            "Data": data.strftime("%d-%m-%Y"),
             "Ovos": int(ovos),
             "Galinhas em Postura": int(galinhas),
             "Vendas (R$)": float(vendas),
@@ -113,7 +113,7 @@ def aba_custos():
     df = SHEETS_MANAGER.get_dataframe("custos", columns=columns)
 
     with st.form("form_custos"):
-        data = st.date_input("Data do custo", value=date.today())
+        data = st.date_input("Data do custo", value=date.today(), format="DD.MM.YYYY")
         categoria = st.selectbox("Categoria", ["Ração", "Vacinas", "Mão de obra", "Energia", "Outros"])
         descricao = st.text_input("Descrição")
         valor = st.number_input("Valor (R$)", min_value=0.0, format="%.2f")
@@ -121,7 +121,7 @@ def aba_custos():
 
     if submit:
         novo = {
-            "Data": data.strftime("%Y-%m-%d"),
+            "Data": data.strftime("%d-%m-%Y"),
             "Categoria": categoria,
             "Descrição": descricao,
             "Valor (R$)": float(valor)
@@ -330,7 +330,7 @@ def aba_pedidos():
     nomes_clientes = df_clientes["Nome"].tolist()
 
     with st.form("form_pedidos"):
-        data_pedido = st.date_input("Data do Pedido", value=date.today())
+        data_pedido = st.date_input("Data do Pedido", value=date.today(), format="DD.MM.YYYY")
         cliente = st.selectbox("Cliente", nomes_clientes)
         qnt_cartelas = st.number_input("Quantidade de Cartelas", min_value=1, step=1, value=1)
         valor_base = st.number_input("Valor Base da Cartela (R$)", min_value=0.0, format="%.2f", value=0.0)
@@ -414,7 +414,7 @@ def aba_pedidos():
         # (precisamos de uma coluna de Data no futuro; como ainda não temos, vamos usar a data de hoje no momento do registro)
         if "Data" not in df.columns:
             # Caso não exista, cria vazia (isso evita erro)
-            df["Data"] = pd.Timestamp.today().strftime("%Y-%m-%d")
+            df["Data"] = pd.Timestamp.today().strftime("%d-%m-%Y")
 
         df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
         df["Ano-Mês"] = df["Data"].dt.to_period("M")
@@ -471,4 +471,5 @@ elif menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+
 
