@@ -441,6 +441,77 @@ def aba_visualizar_pedidos():
     else:
         st.dataframe(df, use_container_width=True)
 
+def aba_relatorio_pedidos():
+    st.header("📈 Relatório de Pedidos")
+
+    df = SHEETS_MANAGER.get_dataframe(
+        "pedidos",
+        columns=["Data", "Cliente", "Quantidade de Cartelas", "Valor Base", "Valor Total", "Forma de Pagamento", "Pago"]
+    )
+
+    if df.empty:
+        st.info("Nenhum pedido registrado ainda.")
+        return
+
+    # Converter e tratar dados
+    df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
+    df["Quantidade de Cartelas"] = pd.to_numeric(df["Quantidade de Cartelas"], errors="coerce").fillna(0)
+    df["Valor Total"] = pd.to_numeric(df["Valor Total"], errors="coerce").fillna(0.0)
+
+    # Filtros
+    st.subheader("🔍 Filtros")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        tipo_agrupamento = st.selectbox("Agrupar por:", ["Mês", "Semana", "Período Personalizado"])
+    with col2:
+        data_inicial = st.date_input("Data inicial", value=df["Data"].min().date())
+    with col3:
+        data_final = st.date_input("Data final", value=df["Data"].max().date())
+
+    # Filtrar o DataFrame pelo período
+    df_filtrado = df[(df["Data"] >= pd.Timestamp(data_inicial)) & (df["Data"] <= pd.Timestamp(data_final))]
+
+    if df_filtrado.empty:
+        st.warning("Nenhum pedido encontrado para o período selecionado.")
+        return
+
+    # Agrupamentos
+    if tipo_agrupamento == "Mês":
+        df_filtrado["Ano-Mês"] = df_filtrado["Data"].dt.to_period("M")
+        resumo = df_filtrado.groupby("Ano-Mês").agg({
+            "Quantidade de Cartelas": "sum",
+            "Valor Total": "sum",
+            "Cliente": "count"
+        }).reset_index()
+        resumo.columns = ["Período", "Total Cartelas", "Total Valor (R$)", "Nº de Pedidos"]
+        resumo["Período"] = resumo["Período"].astype(str)
+
+    elif tipo_agrupamento == "Semana":
+        df_filtrado["Ano-Semana"] = df_filtrado["Data"].dt.strftime("%Y-%U")
+        resumo = df_filtrado.groupby("Ano-Semana").agg({
+            "Quantidade de Cartelas": "sum",
+            "Valor Total": "sum",
+            "Cliente": "count"
+        }).reset_index()
+        resumo.columns = ["Período", "Total Cartelas", "Total Valor (R$)", "Nº de Pedidos"]
+
+    else:  # Período personalizado — mostra apenas o total consolidado
+        resumo = pd.DataFrame([{
+            "Período": f"{data_inicial.strftime('%d/%m/%Y')} a {data_final.strftime('%d/%m/%Y')}",
+            "Total Cartelas": df_filtrado["Quantidade de Cartelas"].sum(),
+            "Total Valor (R$)": df_filtrado["Valor Total"].sum(),
+            "Nº de Pedidos": len(df_filtrado)
+        }])
+
+    st.subheader("📊 Resumo de Pedidos")
+    st.dataframe(resumo, use_container_width=True)
+
+    # Exibir gráfico
+    if tipo_agrupamento in ["Mês", "Semana"] and len(resumo) > 1:
+        st.subheader("📈 Evolução do Faturamento")
+        st.line_chart(resumo.set_index("Período")["Total Valor (R$)"])
+
+
 st.set_page_config(page_title="Gestão de Galinheiro e Entregas", layout="wide")
 st.title("🐔 Gerenciamento de Granja (Cloud)")
 
@@ -452,7 +523,8 @@ menu = st.sidebar.radio("📚 Navegar entre seções:", [
     "📋 Clientes",
     "🚚 Rota",
     "🧾 Pedidos",
-    "📂 Ver Pedidos"
+    "📂 Ver Pedidos",
+    "📈 Relatório de Pedidos"
 ])
 
 if menu == "📅 Produção Diária":
@@ -471,6 +543,9 @@ elif menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+elif menu == "📈 Relatório de Pedidos":
+    aba_relatorio_pedidos()
+
 
 
 
