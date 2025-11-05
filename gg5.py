@@ -417,14 +417,14 @@ def aba_pedidos():
             df["Data"] = pd.Timestamp.today().strftime("%d-%m-%Y")
 
         df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
-        df["Ano-Mês"] = df["Data"].dt.to_period("M")
+        df["Mês-Ano"] = df["Data"].dt.to_period("M")
 
-        resumo = df.groupby("Ano-Mês").agg({
+        resumo = df.groupby("Mês-Ano").agg({
             "Quantidade de Cartelas": "sum",
             "Valor Total": "sum"
         }).reset_index()
 
-        resumo["Ano-Mês"] = resumo["Ano-Mês"].dt.strftime("%m/%Y")
+        resumo["Mês-Ano"] = resumo["Mês-Ano"].dt.strftime("%m/%Y")
 
         st.subheader("📊 Resumo Mensal de Pedidos")
         st.dataframe(resumo, use_container_width=True)
@@ -453,29 +453,52 @@ def aba_relatorio_pedidos():
         st.info("Nenhum pedido registrado ainda.")
         return
 
-    # Converter e tratar dados
+    # Converter tipos
     df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
     df["Quantidade de Cartelas"] = pd.to_numeric(df["Quantidade de Cartelas"], errors="coerce").fillna(0)
     df["Valor Total"] = pd.to_numeric(df["Valor Total"], errors="coerce").fillna(0.0)
 
-    # Filtros
     st.subheader("🔍 Filtros")
-    col1, col2, col3 = st.columns(3)
+
+    col1, col2 = st.columns(2)
     with col1:
         tipo_agrupamento = st.selectbox("Agrupar por:", ["Mês", "Semana", "Período Personalizado"])
     with col2:
-        data_inicial = st.date_input("Data inicial", value=df["Data"].min().date())
-    with col3:
-        data_final = st.date_input("Data final", value=df["Data"].max().date())
+        forma_pgto_filtro = st.multiselect(
+            "Forma de Pagamento",
+            options=sorted(df["Forma de Pagamento"].dropna().unique().tolist()),
+            default=[]
+        )
 
-    # Filtrar o DataFrame pelo período
-    df_filtrado = df[(df["Data"] >= pd.Timestamp(data_inicial)) & (df["Data"] <= pd.Timestamp(data_final))]
+    # Filtro de cliente
+    clientes = sorted(df["Cliente"].dropna().unique().tolist())
+    cliente_filtro = st.multiselect("Cliente(s)", options=clientes, default=[])
+
+    # Filtro de período personalizado (aparece só se selecionado)
+    if tipo_agrupamento == "Período Personalizado":
+        col3, col4 = st.columns(2)
+        with col3:
+            data_inicial = st.date_input("Data inicial", value=df["Data"].min().date())
+        with col4:
+            data_final = st.date_input("Data final", value=df["Data"].max().date())
+        df_filtrado = df[
+            (df["Data"] >= pd.Timestamp(data_inicial)) &
+            (df["Data"] <= pd.Timestamp(data_final))
+        ]
+    else:
+        df_filtrado = df.copy()
+
+    # Aplicar filtro de cliente e forma de pagamento
+    if cliente_filtro:
+        df_filtrado = df_filtrado[df_filtrado["Cliente"].isin(cliente_filtro)]
+    if forma_pgto_filtro:
+        df_filtrado = df_filtrado[df_filtrado["Forma de Pagamento"].isin(forma_pgto_filtro)]
 
     if df_filtrado.empty:
-        st.warning("Nenhum pedido encontrado para o período selecionado.")
+        st.warning("Nenhum pedido encontrado para os filtros selecionados.")
         return
 
-    # Agrupamentos
+    # === Agrupamento por MÊS ===
     if tipo_agrupamento == "Mês":
         df_filtrado["Ano-Mês"] = df_filtrado["Data"].dt.to_period("M")
         resumo = df_filtrado.groupby("Ano-Mês").agg({
@@ -486,16 +509,27 @@ def aba_relatorio_pedidos():
         resumo.columns = ["Período", "Total Cartelas", "Total Valor (R$)", "Nº de Pedidos"]
         resumo["Período"] = resumo["Período"].astype(str)
 
+    # === Agrupamento por SEMANA (com datas) ===
     elif tipo_agrupamento == "Semana":
-        df_filtrado["Ano-Semana"] = df_filtrado["Data"].dt.strftime("%Y-%U")
-        resumo = df_filtrado.groupby("Ano-Semana").agg({
+        df_filtrado["Semana_Inicio"] = df_filtrado["Data"] - pd.to_timedelta(df_filtrado["Data"].dt.weekday, unit="d")
+        df_filtrado["Semana_Fim"] = df_filtrado["Semana_Inicio"] + pd.to_timedelta(6, unit="d")
+
+        resumo = df_filtrado.groupby("Semana_Inicio").agg({
             "Quantidade de Cartelas": "sum",
             "Valor Total": "sum",
             "Cliente": "count"
         }).reset_index()
-        resumo.columns = ["Período", "Total Cartelas", "Total Valor (R$)", "Nº de Pedidos"]
 
-    else:  # Período personalizado — mostra apenas o total consolidado
+        resumo["Semana_Fim"] = resumo["Semana_Inicio"] + pd.to_timedelta(6, unit="d")
+        resumo["Período"] = resumo.apply(
+            lambda x: f"{x['Semana_Inicio'].strftime('%d/%m/%Y')} a {x['Semana_Fim'].strftime('%d/%m/%Y')}",
+            axis=1
+        )
+
+        resumo = resumo[["Período", "Total Cartelas", "Total Valor (R$)", "Nº de Pedidos"]]
+
+    # === Período Personalizado (resumo único) ===
+    else:
         resumo = pd.DataFrame([{
             "Período": f"{data_inicial.strftime('%d/%m/%Y')} a {data_final.strftime('%d/%m/%Y')}",
             "Total Cartelas": df_filtrado["Quantidade de Cartelas"].sum(),
@@ -503,10 +537,11 @@ def aba_relatorio_pedidos():
             "Nº de Pedidos": len(df_filtrado)
         }])
 
+    # === Exibição ===
     st.subheader("📊 Resumo de Pedidos")
     st.dataframe(resumo, use_container_width=True)
 
-    # Exibir gráfico
+    # Gráfico de linha (para Mês/Semana)
     if tipo_agrupamento in ["Mês", "Semana"] and len(resumo) > 1:
         st.subheader("📈 Evolução do Faturamento")
         st.line_chart(resumo.set_index("Período")["Total Valor (R$)"])
@@ -545,6 +580,7 @@ elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
 elif menu == "📈 Relatório de Pedidos":
     aba_relatorio_pedidos()
+
 
 
 
