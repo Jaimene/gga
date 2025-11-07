@@ -286,36 +286,15 @@ def _mostrar_rota_persistente():
             optimize_waypoints=len(coordenadas) >= 4
         )
 
-        distancia = rotas["features"][0]["properties"]["segments"][0]["distance"] / 1000
-        duracao = rotas["features"][0]["properties"]["segments"][0]["duration"] / 60
-        st.success(f"Distância: {distancia:.2f} km | Tempo: {duracao:.1f} min")
-
-        m = folium.Map(location=coordenadas[0][::-1], zoom_start=12)
-        folium.Marker(coordenadas[0][::-1], tooltip="Partida", icon=folium.Icon(color="green")).add_to(m)
-        for i, coord in enumerate(coordenadas[1:], 1):
-            folium.Marker(coord[::-1], tooltip=nomes[i], icon=folium.Icon(color="blue")).add_to(m)
-        folium.PolyLine([c[::-1] for c in coordenadas], color="blue").add_to(m)
-        st_folium(m, width=700, height=500)
-
         if len(coordenadas) >= 2:
             # monta URLs com coordenadas (ordem otimizada)
             google_maps_url = (
                 f"https://www.google.com/maps/dir/{coordenadas[0][1]},{coordenadas[0][0]}"
                 + "".join([f"/{coord[1]},{coord[0]}" for coord in coordenadas[1:]])
             )
-            waze_url = f"https://waze.com/ul?ll={coordenadas[-1][1]},{coordenadas[-1][0]}&navigate=yes"
 
             st.markdown(f"**🗺️ Google Maps:** [Abrir Rota]({google_maps_url})", unsafe_allow_html=True)
-            st.markdown(f"**🚗 Waze (último destino):** [Abrir Rota]({waze_url})", unsafe_allow_html=True)
 
-            # Botão copiar link (JS) — usamos f-string para inserir a URL com segurança
-            st.markdown(f'''
-                <input type="text" value="{google_maps_url}" id="linkRota" readonly style="opacity:0; position:absolute;">
-                <button onclick="navigator.clipboard.writeText(document.getElementById('linkRota').value)" 
-                        style="padding:8px 14px; background-color:#ffc107; border:none; border-radius:5px; cursor:pointer;">
-                    📋 Copiar Link do Google Maps
-                </button>
-            ''', unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Erro ao gerar rota: {e}")
