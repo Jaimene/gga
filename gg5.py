@@ -242,7 +242,7 @@ def aba_rota():
         st.info("Cadastre clientes antes de gerar a rota.")
         return
 
-    selecionados = st.multiselect("Selecione os clientes com pedido:", [f"{row['nome']} – {row['endereco']}" for _, row in df_clientes.iterrows()])
+    selecionados = st.multiselect("Selecione os clientes com pedido:", [f"{row['Nome']} – {row['Endereço']}" for _, row in df_clientes.iterrows()])
     if not selecionados:
         if st.session_state.get("mostrar_rota", False):
             _mostrar_rota_persistente()
@@ -261,7 +261,7 @@ def aba_rota():
         nomes.append("Partida")
 
         for s in selecionados:
-            c = df_clientes[df_clientes.apply(lambda row: f"{row['nome']} – {row['endereco']}" == s, axis=1)].iloc[0]
+            c = df_clientes[df_clientes.apply(lambda row: f"{row['Nome']} – {row['Endereço']}" == s, axis=1)].iloc[0]
             coord = geocodificar_endereco(c["endereco"], c["nome"])
             if coord:
                 coordenadas.append(coord)
@@ -580,4 +580,5 @@ elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
 elif menu == "📈 Relatório de Pedidos":
     aba_relatorio_pedidos()
+
 
