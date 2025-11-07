@@ -9,7 +9,7 @@ from streamlit_folium import st_folium
 # ========== CONFIGURAÇÕES ==========
 SPREADSHEET_NAME = "GGApp25"
 ENDERECO_PARTIDA = "Rua Doutor Clemente Ferreira, São Caetano do Sul,SP,Brasil"
-ORS_API_KEY = st.secrets.get("ORS_API_KEY", None)
+ORS_API_KEY = st.secrets("ORS_API_KEY", None)
 ors = None
 if ORS_API_KEY:
     try:
@@ -262,10 +262,10 @@ def aba_rota():
 
         for s in selecionados:
             c = df_clientes[df_clientes.apply(lambda row: f"{row['Nome']} – {row['Endereço']}" == s, axis=1)].iloc[0]
-            coord = geocodificar_endereco(c["endereco"], c["nome"])
+            coord = geocodificar_endereco(c["Endereço"], c["Nome"])
             if coord:
                 coordenadas.append(coord)
-                nomes.append(c["nome"])
+                nomes.append(c["Nome"])
 
         st.session_state["rota_coords"] = coordenadas
         st.session_state["rota_nomes"] = nomes
@@ -580,5 +580,6 @@ elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
 elif menu == "📈 Relatório de Pedidos":
     aba_relatorio_pedidos()
+
 
 
