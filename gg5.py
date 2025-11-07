@@ -9,7 +9,7 @@ from streamlit_folium import st_folium
 # ========== CONFIGURAÇÕES ==========
 SPREADSHEET_NAME = "GGApp25"
 ENDERECO_PARTIDA = "Rua Doutor Clemente Ferreira, São Caetano do Sul,SP,Brasil"
-ORS_API_KEY = st.secrets("ORS_API_KEY", None)
+ORS_API_KEY = st.secrets.get("ORS_API_KEY", None)
 ors = None
 if ORS_API_KEY:
     try:
@@ -580,6 +580,7 @@ elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
 elif menu == "📈 Relatório de Pedidos":
     aba_relatorio_pedidos()
+
 
 
 
