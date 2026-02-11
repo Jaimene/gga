@@ -4,7 +4,7 @@ import gspread
 from datetime import date
 
 # ========== CONFIGURAÇÕES ==========
-SPREADSHEET_NAME = "GGApp25"
+SPREADSHEET_NAME = "GGApp26"
 
 st.set_page_config(
     page_title="Pedidos",
@@ -171,6 +171,51 @@ def aba_visualizar_pedidos():
                 if SHEETS_MANAGER.overwrite("pedidos", df):
                     st.success("✅ Pedido atualizado!")
                     st.rerun()
+                    
+# ========== ABA CLIENTES ==========
+def aba_clientes():
+    st.header("📋 Cadastro de Clientes")
+
+    columns = ["Nome", "Endereço", "Obs"]
+    df = SHEETS_MANAGER.get_dataframe("clientes", columns=columns)
+
+    st.subheader("➕ Novo Cliente")
+
+    with st.form("form_clientes"):
+        nome = st.text_input("👤 Nome do Cliente")
+        endereco = st.text_input("📍 Endereço Completo")
+        observacoes = st.text_input("📝 Observações (ex.: Apto 42, Bloco B)")
+        submit = st.form_submit_button("Adicionar Cliente")
+
+    if submit:
+        if nome and endereco:
+            novo = {
+                "Nome": nome.strip(),
+                "Endereço": endereco.strip(),
+                "Obs": observacoes.strip()
+            }
+            if SHEETS_MANAGER.append_row("clientes", novo):
+                st.success("✅ Cliente adicionado!")
+                st.rerun()
+        else:
+            st.warning("⚠️ Preencha nome e endereço.")
+
+    st.subheader("📁 Lista de Clientes")
+
+    df = SHEETS_MANAGER.get_dataframe("clientes", columns=columns)
+
+    if df.empty:
+        st.info("Nenhum cliente cadastrado.")
+        return
+
+    # Mostrar clientes em cards (mobile-friendly)
+    for i, row in df.iterrows():
+        with st.container(border=True):
+            st.markdown(f"👤 **{row.get('Nome','')}**")
+            st.markdown(f"📍 {row.get('Endereço','')}")
+            
+            if row.get("Obs"):
+                st.markdown(f"📝 {row.get('Obs')}")
 
 
 # ========== APP ==========
@@ -178,12 +223,17 @@ st.title("📱 Sistema de Pedidos")
 
 menu = st.sidebar.radio("Menu", [
     "🧾 Pedidos",
-    "📂 Ver Pedidos"
+    "📂 Ver Pedidos",
+    "📋 Clientes"
 ])
 
 if menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+elif menu == "📋 Clientes":
+    aba_clientes()
+
+
 
 
