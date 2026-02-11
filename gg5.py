@@ -67,7 +67,7 @@ def aba_pedidos():
     with st.form("form_pedidos"):
         data_pedido = st.date_input("📅 Data do Pedido", value=date.today())
         cliente = st.selectbox("👤 Cliente", nomes_clientes)
-        qnt_cartelas = st.number_input("📦 Quantidade de Cartelas", min_value=1, step=1, value=1)
+        qnt_cartelas = st.number_input("📦 Qt Cartelas", min_value=1, step=1, value=1)
         valor_base = st.number_input("💰 Valor Base da Cartela (R$)", min_value=0.0, format="%.2f")
         forma_pgto = st.selectbox("💳 Forma de Pagamento", ["Dinheiro", "Cartão", "Pix"])
         pago = st.checkbox("✅ Pago")
@@ -111,7 +111,7 @@ def aba_visualizar_pedidos():
             st.markdown(f"✅ **Pago:** {row['Pago']}")
             st.markdown(f"📅 **Data:** {row['Data']}")
             st.markdown(f"👤 **Cliente:** {row['Cliente']}")
-            st.markdown(f"📦 **Cartelas:** {row['Qt Cartelas']}")
+            st.markdown(f"📦 **Qt Cartelas:** {row['Quantidade de Cartelas']}")
             st.markdown(f"💰 **Total:** R$ {row['Valor Total']:.2f}")
             st.markdown(f"💳 **Pagamento:** {row['Forma de Pagamento']}")
 
@@ -127,3 +127,4 @@ if menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+
