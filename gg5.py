@@ -174,11 +174,12 @@ def aba_visualizar_pedidos():
                     
 # ========== ABA CLIENTES ==========
 def aba_clientes():
-    st.header("📋 Cadastro de Clientes")
+    st.header("📋 Clientes (Cadastro e Edição)")
 
     columns = ["Nome", "Endereço", "Obs"]
     df = SHEETS_MANAGER.get_dataframe("clientes", columns=columns)
 
+    # ================== CADASTRO ==================
     st.subheader("➕ Novo Cliente")
 
     with st.form("form_clientes"):
@@ -200,7 +201,8 @@ def aba_clientes():
         else:
             st.warning("⚠️ Preencha nome e endereço.")
 
-    st.subheader("📁 Lista de Clientes")
+    # ================== LISTA + EDIÇÃO ==================
+    st.subheader("📁 Clientes Salvos")
 
     df = SHEETS_MANAGER.get_dataframe("clientes", columns=columns)
 
@@ -208,14 +210,48 @@ def aba_clientes():
         st.info("Nenhum cliente cadastrado.")
         return
 
-    # Mostrar clientes em cards (mobile-friendly)
     for i, row in df.iterrows():
         with st.container(border=True):
-            st.markdown(f"👤 **{row.get('Nome','')}**")
-            st.markdown(f"📍 {row.get('Endereço','')}")
-            
-            if row.get("Obs"):
-                st.markdown(f"📝 {row.get('Obs')}")
+            st.markdown(f"### 👤 Cliente #{i+1}")
+
+            novo_nome = st.text_input(
+                "Nome",
+                value=row.get("Nome", ""),
+                key=f"nome_cliente_{i}"
+            )
+
+            novo_endereco = st.text_input(
+                "Endereço",
+                value=row.get("Endereço", ""),
+                key=f"endereco_cliente_{i}"
+            )
+
+            nova_obs = st.text_input(
+                "Observações",
+                value=row.get("Obs", ""),
+                key=f"obs_cliente_{i}"
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("💾 Salvar alterações", key=f"save_cliente_{i}"):
+                    df.loc[i, "Nome"] = novo_nome.strip()
+                    df.loc[i, "Endereço"] = novo_endereco.strip()
+                    df.loc[i, "Obs"] = nova_obs.strip()
+
+                    if SHEETS_MANAGER.overwrite("clientes", df):
+                        st.success("✅ Cliente atualizado!")
+                        st.rerun()
+
+            with col2:
+                if st.button("🗑️ Excluir cliente", key=f"delete_cliente_{i}"):
+                    df = df.drop(index=i)
+
+                    if SHEETS_MANAGER.overwrite("clientes", df):
+                        st.success("🗑️ Cliente removido!")
+                        st.rerun()
+
 
 
 # ========== APP ==========
@@ -233,6 +269,7 @@ elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
 elif menu == "📋 Clientes":
     aba_clientes()
+
 
 
 
