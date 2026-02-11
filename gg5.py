@@ -92,28 +92,86 @@ def aba_pedidos():
 
 # ========== ABA VER PEDIDOS ==========
 def aba_visualizar_pedidos():
-    st.header("📂 Pedidos Salvos")
+    st.header("📂 Pedidos Salvos (Editar)")
 
     df = SHEETS_MANAGER.get_dataframe(
         "pedidos",
-        columns=["Data","Cliente","Quantidade de Cartelas","Valor Total","Forma de Pagamento","Pago"]
+        columns=["Data","Cliente","Quantidade de Cartelas","Valor Base","Valor Total","Forma de Pagamento","Pago"]
     )
 
     if df.empty:
         st.info("Nenhum pedido encontrado.")
         return
 
-    df["Valor Total"] = pd.to_numeric(df["Valor Total"], errors="coerce").fillna(0)
+    # Normalizar valores
+    df["Quantidade de Cartelas"] = pd.to_numeric(df["Quantidade de Cartelas"], errors="coerce").fillna(0).astype(int)
+    df["Valor Base"] = pd.to_numeric(df["Valor Base"], errors="coerce").fillna(0.0)
+    df["Valor Total"] = pd.to_numeric(df["Valor Total"], errors="coerce").fillna(0.0)
+    df["Pago"] = df["Pago"].apply(lambda x: True if str(x).lower() in ["sim","true","1"] else False)
 
-    # Cards mobile-friendly
-    for _, row in df.iterrows():
+    # Lista clientes
+    df_clientes = SHEETS_MANAGER.get_dataframe("clientes", columns=["Nome"])
+    nomes_clientes = df_clientes["Nome"].tolist() if not df_clientes.empty else []
+
+    st.caption("Toque nos campos, edite e salve individualmente")
+
+    for i, row in df.iterrows():
         with st.container(border=True):
-            st.markdown(f"✅ **Pago:** {row['Pago']}")
-            st.markdown(f"📅 **Data:** {row['Data']}")
-            st.markdown(f"👤 **Cliente:** {row['Cliente']}")
-            st.markdown(f"📦 **Qt Cartelas:** {row['Quantidade de Cartelas']}")
-            st.markdown(f"💰 **Total:** R$ {row['Valor Total']:.2f}")
-            st.markdown(f"💳 **Pagamento:** {row['Forma de Pagamento']}")
+            st.markdown(f"### 🧾 Pedido #{i+1}")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                nova_data = st.date_input(
+                    "📅 Data",
+                    value=pd.to_datetime(row["Data"], errors="coerce") or date.today(),
+                    key=f"data_{i}"
+                )
+
+                novo_cliente = st.selectbox(
+                    "👤 Cliente",
+                    options=nomes_clientes,
+                    index=nomes_clientes.index(row["Cliente"]) if row["Cliente"] in nomes_clientes else 0,
+                    key=f"cliente_{i}"
+                )
+
+            with col2:
+                nova_qtd = st.number_input(
+                    "📦 Quantidade",
+                    min_value=0,
+                    value=int(row["Quantidade de Cartelas"]),
+                    step=1,
+                    key=f"qtd_{i}"
+                )
+
+                novo_pagamento = st.selectbox(
+                    "💳 Forma de Pagamento",
+                    ["Dinheiro","Cartão","Pix"],
+                    index=["Dinheiro","Cartão","Pix"].index(row["Forma de Pagamento"]) if row["Forma de Pagamento"] in ["Dinheiro","Cartão","Pix"] else 0,
+                    key=f"pgto_{i}"
+                )
+
+            novo_pago = st.checkbox(
+                "✅ Pago",
+                value=row["Pago"],
+                key=f"pago_{i}"
+            )
+
+            novo_valor_total = round(nova_qtd * float(row["Valor Base"]), 2)
+
+            st.markdown(f"💰 **Valor Total:** R$ {novo_valor_total:.2f}")
+
+            if st.button("💾 Salvar alterações", key=f"save_{i}"):
+                df.loc[i, "Pago"] = "Sim" if novo_pago else "Não"
+                df.loc[i, "Data"] = nova_data.strftime("%d-%m-%Y")
+                df.loc[i, "Cliente"] = novo_cliente
+                df.loc[i, "Qt Cartelas"] = nova_qtd
+                df.loc[i, "Forma de Pagamento"] = novo_pagamento
+                df.loc[i, "Valor Total"] = novo_valor_total
+
+                if SHEETS_MANAGER.overwrite("pedidos", df):
+                    st.success("✅ Pedido atualizado!")
+                    st.rerun()
+
 
 # ========== APP ==========
 st.title("📱 Sistema de Pedidos")
@@ -127,4 +185,5 @@ if menu == "🧾 Pedidos":
     aba_pedidos()
 elif menu == "📂 Ver Pedidos":
     aba_visualizar_pedidos()
+
 
